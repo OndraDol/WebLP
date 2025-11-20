@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURES Generátor LP</title>
+    <!-- Knihovny pro práci s PDF, DOCX a soubory -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.4/pizzip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #1E1E1E;
+            --input-bg: #3C3F41;
+            --text-color: #ffffff;
+            --border-color: #555;
+            --accent-color: #009688; /* Teal like material theme */
+            --btn-docx: #007ACC;
+            --btn-pdf: #D32F2F;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        h1 { text-align: center; margin-bottom: 30px; }
+
+        /* Drag & Drop Zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background-color: #252526;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            margin-bottom: 20px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background-color: #333;
+        }
+
+        /* Form Layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 10px; align-items: center;}
+        
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: 1px solid var(--accent-color); }
+
+        .group-box {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .group-title {
+            position: absolute;
+            top: -12px;
+            left: 15px;
+            background-color: #2d2d2d;
+            padding: 0 5px;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .factors-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .factor-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 10px;
+        }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 20px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-docx { background-color: var(--btn-docx); }
+        
+        /* Hidden file input */
+        #fileInput { display: none; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AURES Generátor LP (Web)</h1>
+
+    <!-- Sekce pro nahrání PDF -->
+    <div class="drop-zone" id="dropZone">
+        <p>Klikněte sem nebo přetáhněte PDF dotazník</p>
+        <input type="file" id="fileInput" accept=".pdf">
+    </div>
+
+    <!-- Osobní údaje -->
+    <div class="group-box">
+        <span class="group-title">Údaje z PDF</span>
+        <div class="grid-2">
+            <div><label>Jméno</label><input type="text" id="jmeno"></div>
+            <div><label>Adresa</label><input type="text" id="adresa"></div>
+            <div><label>Datum narození</label><input type="text" id="narozeni"></div>
+            <div><label>PSČ</label><input type="text" id="psc"></div>
+        </div>
+    </div>
+
+    <!-- Faktory -->
+    <div class="group-box">
+        <span class="group-title">Faktory a Kategorie</span>
+        <div class="grid-2">
+            <!-- Levý sloupec faktorů -->
+            <div class="factors-container">
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+            </div>
+            <!-- Pravý sloupec faktorů -->
+            <div class="factors-container">
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detaily pozice -->
+    <div class="grid-4">
+        <div style="grid-column: span 1;">
+            <label>Pobočka</label>
+            <select id="pobocka"></select>
+        </div>
+        <div style="grid-column: span 2;">
+            <label>Pozice (název)</label>
+            <input type="text" id="pozice">
+        </div>
+        <div style="grid-column: span 1;">
+            <label>Konzultant</label>
+            <select id="konzultant"></select>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label>Pozice popis (šablona)</label>
+        <select id="pozice_popis"></select>
+    </div>
+
+    <!-- Tlačítka -->
+    <div class="btn-group">
+        <button class="btn-docx" onclick="generateDocx()">Generovat DOCX</button>
+    </div>
+</div>
+
+<script>
+    // --- DATA Z PYTHONU ---
+    const FACTOR_OPTIONS = [
+        "", "Zátěž chladem", "Fyzická zátěž", "Pracovní poloha", "Hluk", "Vibrace", "Prach", 
+        "Chemické látky a směsi", "------------------", "Biologické činitele", 
+        "Činnosti epidemiologicky závažné", "Elektrotechnik dle vyhl č.50 / 1978 Sb.", 
+        "Neionizující záření", "Obsluha tlakových nádob a zařízení vys. napětí", 
+        "Obsluha transport. a vysokozdvižných vozíků", "Obsluha transport. vytáhů a jeřábů a vázaní břemen", 
+        "Práce v noci", "Práce ve výškách a nad volnou hloubkou", "Psychická zátěž", 
+        "Řidič v pracovněprávním vztahu do 7,5 tuny", "Řidič v pracovněprávním vztahu nad 7,5 tuny", 
+        "Vyšetření v základním rozsahu", "Zátež teplem", "Zraková zátěž"
+    ];
+
+    const CATEGORIES = ["", "Kat. 1", "Kat. 2", "Kat. 3", "Kat. 4"];
+
+    const position_descriptions = {
+        "Call Centrum": "Činnost spojená s jednáním s klienty/zaměstnanci po telefonu, prací na počítači a administrativními úkony. Provoz: dvousměnný, Pracovní doba: 8 hodinové směny (pondělí - neděle) v průměru 40 hodin/týdně.",
+        "Manažer/Zástupce manažera": "Administrativní činnost spojená s prací na počítači, s vedením pracovního týmu a jednání s klienty. Součástí práce je řízení služebního vozidla. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Prodejce": "Činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla. Práce je vykonávaná v administrativních budovách a zároveň ve venkovních prostorech. V zimních měsících není překročena hranice čtyř hodin za pracovní dobu, kdyby zaměstnanci byli vystaveni operativní teplotě +4 st. C a nižší. Práce prodejce je spojená se střídáním pobytu v teple a v chladu. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Nákupčí / Testovací technik": "Administrativní činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla. Občasný pohyb ve venkovních prostorech. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Mobilní nákupčí": "Administrativní činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla (více než 60%). Občasný pohyb ve venkovních prostorech. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Specialista zákaznického servisu": "Administrativní činnost spojená s prací na počítači a jednání s klienty.  Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Mobilní Specialista zákaznického servisu": "Administrativní činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla.  Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Administrativa": "Administrativní činnost spojená s prací na počítači, zakládáním složek a jednání se zaměstnanci/klienty. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Operační tým/Pracovník podpory prodeje/Vedoucí úseku/Mobilní pracovník podpory prodeje": "Drobné práce v dílně, mytí a čištění automobilů, část pracovní doby je práce venku. Součástí práce je řízení vozidla. Práce s chemickými látkami s H314. H340, H350, H372. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
+        "Uklízečka": "Provádí úklidové práce, mytí, čištění, vynášení odpadků. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Stock kontrolor": "Převoz automobilů v objektu společnosti, kontrola vozového parku, občasná práce s počítačem. Součástí práce je řízení vozidla. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Řidič do 7,5t/ Kurýr": "Provádí přepravu zákazníků a vozidel. Součástí práce je řízení vozidla. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Řidič nad 7,5t": "Provádí přepravu vozů mezi pobočkami, nakládka a vykládka vozů. Součástí práce je řízení vozidla nad 7,5 tuny. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Technik se zaměřením na opravy detailů": "Provádí drobné opravy detailů vozu. Součástí práce je řízení vozidla. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Mechanik": "Provádí údržbu, opravy a seřizování silničních motorových vozidel. Práce s chemickými látkami s H314. Součástí práce je řízení vozidla. Provoz: jednosměnný, Pracovní doba: 8 hodinové směny (pondělí - pátek)",
+        "Výpomoc při přepravě vozů mezi pobočkami": "Provádí přepravu zákazníků a vozidel. Součástí práce je řízení vozidla. Provoz: jednosměnný, DPP spolupráce.",
+        "Výpomoc při prodeji vozů": "Činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla. Práce je vykonávaná v administrativních budovách a zároveň ve venkovních prostorech. V zimních měsících není překročena hranice čtyř hodin za pracovní dobu, kdyby zaměstnanci byli vystaveni operativní teplotě +4 st. C a nižší. Práce je spojená se střídáním pobytu v teple a v chladu. Povaha práce nárazová (dohoda o provedení práce), směny maximálně 8hodinové."
+    };
+
+    const branch_list = [
+        "Brno", "Chomutov", "České Budějovice", "Čestlice", "Hradec Králové", "Jihlava", "Kladno", "Kolín",
+        "Liberec", "Mladá Boleslav", "Olomouc", "Opava", "Ostrava", "Pardubice", "Plzeň", "Praha", "Sokolov",
+        "Tábor", "Teplice", "Ústí nad Labem", "Valašské Meziříčí", "Zlín", "Znojmo"
+    ];
+
+    const consultant_list = [
+        "Anna Brůčková", "Anna Kučerová", "Alžběta Čermáková", "Blanka Poliaková",
+        "Jan Jarma", "Kamila Hušková", "Karolína Kulvaitová", "Miroslava Válková", "Ondřej Dolejš"
+    ];
+
+    // --- INICIALIZACE ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Naplnit selecty
+        fillSelect('pobocka', branch_list);
+        fillSelect('konzultant', consultant_list);
+        fillSelect('pozice_popis', Object.keys(position_descriptions));
+
+        // Naplnit faktory (6 řádků)
+        const factorSelects = document.querySelectorAll('.factor-sel');
+        const catSelects = document.querySelectorAll('.cat-sel');
+        
+        factorSelects.forEach((sel, index) => {
+            fillSelectObj(sel, FACTOR_OPTIONS);
+            fillSelectObj(catSelects[index], CATEGORIES);
+        });
+
+        // Výchozí hodnoty (z Python kódu)
+        factorSelects[0].value = "Vyšetření v základním rozsahu";
+        catSelects[0].value = "Kat. 1";
+    });
+
+    function fillSelect(id, array) {
+        const sel = document.getElementById(id);
+        array.sort((a, b) => a.localeCompare(b, 'cs')).forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            sel.appendChild(opt);
+        });
+    }
+
+    function fillSelectObj(selectObj, array) {
+        array.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            selectObj.appendChild(opt);
+        });
+    }
+
+    // --- PDF LOGIKA ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) processPDF(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) processPDF(e.target.files[0]);
+    });
+
+    async function processPDF(file) {
+        if (file.type !== 'application/pdf') { alert("Vyberte prosím PDF soubor."); return; }
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const form = pdfDoc.getForm();
+        
+        // Extrakce polí (názvy odpovídají Python skriptu)
+        // Pozn: pdf-lib vrací prázdný string pokud pole neexistuje, pokud to ošetříme
+        try {
+            const getField = (name) => {
+                try { return form.getTextField(name).getText() || ""; } catch(e) { return ""; }
+            };
+
+            const jmeno = getField('jmeno');
+            let narozeni = getField('narozeni');
+            if(narozeni.includes('/')) narozeni = narozeni.split('/')[0].trim();
+            
+            const adresaUlice = getField('trvale-bydliste-ulice');
+            const mesto = getField('trvale-bydliste-mesto');
+            const psc = getField('trvale-bydliste-psc');
+
+            document.getElementById('jmeno').value = jmeno;
+            document.getElementById('narozeni').value = narozeni;
+            document.getElementById('adresa').value = (adresaUlice + ", " + mesto).replace(/^, |, $/g, '');
+            document.getElementById('psc').value = psc;
+            
+            // dropZone.style.borderColor = 'green';
+            dropZone.querySelector('p').textContent = "PDF načteno: " + file.name;
+        } catch (err) {
+            console.error(err);
+            alert("Chyba při čtení PDF formuláře. Je to AcroForm?");
+        }
+    }
+
+    // --- DOCX GENERACE ---
+    async function generateDocx() {
+        // 1. Načtení template souboru (musí být ve stejné složce)
+        let templateBuffer;
+        try {
+            const response = await fetch('LP_template.docx');
+            if (!response.ok) throw new Error("Nelze načíst LP_template.docx");
+            templateBuffer = await response.arrayBuffer();
+        } catch (e) {
+            alert("Chyba: Soubor LP_template.docx nebyl nalezen ve stejné složce jako index.html.");
+            return;
+        }
+
+        // 2. Příprava dat
+        const factorSelects = document.querySelectorAll('.factor-sel');
+        const catSelects = document.querySelectorAll('.cat-sel');
+        const factorsData = {};
+        factorSelects.forEach((sel, i) => {
+            factorsData[`faktor${i+1}`] = sel.value;
+            factorsData[`kategorie${i+1}`] = catSelects[i].value;
+        });
+
+        const selectedPopis = document.getElementById('pozice_popis').value;
+        const data = {
+            jmeno: document.getElementById('jmeno').value,
+            narozeni: document.getElementById('narozeni').value,
+            adresa: document.getElementById('adresa').value,
+            psc: document.getElementById('psc').value,
+            pozice: document.getElementById('pozice').value,
+            pobocka: document.getElementById('pobocka').value,
+            konzultant: document.getElementById('konzultant').value,
+            datum: new Date().toLocaleDateString('cs-CZ'),
+            pozice_popis: selectedPopis,
+            popis_pozice: position_descriptions[selectedPopis] || "",
+            ...factorsData
+        };
+
+        // 3. Renderování DOCX
+        const zip = new PizZip(templateBuffer);
+        const doc = new window.docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+        });
+
+        try {
+            doc.render(data);
+        } catch (error) {
+            alert("Chyba při generování: " + error.message);
+            console.log(error);
+            return;
+        }
+
+        // 4. Uložení
+        const out = doc.getZip().generate({
+            type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+        
+        const surname = data.jmeno.split(" ").pop() || "nezadano";
+        saveAs(out, `LP_${surname}.docx`);
+    }
+</script>
+
+</body>
+</html>
