@@ -3,209 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURES Generátor LP</title>
-    <!-- Knihovny pro práci s PDF, DOCX a soubory -->
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <title>Lékařský posudek - Generátor</title>
+    
+    <!-- Externí knihovny -->
+    <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.4/pizzip.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
-        :root {
-            --bg-color: #1E1E1E;
-            --input-bg: #3C3F41;
-            --text-color: #ffffff;
-            --border-color: #555;
-            --accent-color: #009688; /* Teal like material theme */
-            --btn-docx: #007ACC;
-            --btn-pdf: #D32F2F;
+        /* Nastavení barev - Přidána proměnná --input-border pro tmavší rámečky */
+        :root { 
+            --bg:#f7fbff; 
+            --card:#ffffff; 
+            --muted:#5a718a; 
+            --text:#102a43; 
+            --accent:#005DA8; 
+            --border:#e5eef6;        /* Jemný rámeček pro kartu */
+            --input-border:#b8c6d6;  /* Tmavší rámeček pro inputy */
+            --error:#D32F2F; 
+            --success:#388E3C; 
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+        
+        * { box-sizing: border-box; }
+        html, body { height:100%; }
+        body { margin:0; font-family:system-ui,-apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial,"Apple Color Emoji","Segoe UI Emoji"; color:var(--text); background:var(--bg); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        
+        .container{ max-width:1100px; margin:0 auto; padding:32px 16px 80px; }
+        
+        header{ display:flex; align-items:center; justify-content:flex-start; gap:16px; margin-bottom:20px; border-top:6px solid var(--accent); padding-top:16px; }
+        h1{ font-size:28px; margin:0; letter-spacing:.4px; color:var(--accent); }
+        
+        .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 8px 30px rgba(16,42,67,.08); }
+        .form{ padding:20px; display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+        
+        .field{ grid-column:span 12; display:flex; flex-direction:column; gap:6px; position:relative; }
+        @media (min-width:720px){ .field.half{ grid-column:span 6; } .field.third{ grid-column:span 4; } .field.quarter{ grid-column:span 3; } }
+        
+        label{ font-size:12px; color:#0e2a47; font-weight:600; letter-spacing:.2px; }
+        
+        /* Zde použita tmavší barva --input-border */
+        input[type="text"], select { 
+            width:100%; 
+            border:1px solid var(--input-border); 
+            background:#fff; 
+            color:#102a43; 
+            padding:10px 12px; 
+            border-radius:10px; 
+            outline:none; 
+            transition:border-color .15s ease, box-shadow .15s ease; 
+            height: 42px; 
         }
+        
+        input::placeholder{ color:#829ab1; }
+        input:focus, select:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,93,168,.18); }
+        
+        .divider{ height:1px; background:var(--border); margin:16px 0; grid-column:1 / -1; }
+        .section-title { grid-column: 1 / -1; font-size: 16px; font-weight: 700; color: var(--accent); margin-top: 10px; margin-bottom: 5px; }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background-color: #2d2d2d;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        h1 { text-align: center; margin-bottom: 30px; }
-
-        /* Drag & Drop Zone */
+        /* Drop Zone Styles */
         .drop-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: 10px;
+            grid-column: 1 / -1;
+            border: 2px dashed var(--accent);
+            border-radius: 12px;
             padding: 30px;
             text-align: center;
-            background-color: #252526;
+            background-color: #f0f7ff;
             cursor: pointer;
-            transition: border-color 0.3s;
-            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            color: var(--accent);
+            font-weight: 500;
         }
         .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent-color);
-            background-color: #333;
+            background-color: #e0efff;
+            transform: scale(1.01);
         }
+        .drop-zone p { margin: 0; pointer-events: none; }
+        .drop-zone-success { border-color: var(--success); color: var(--success); background-color: #e8f5e9; }
 
-        /* Form Layout */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 10px; align-items: center;}
+        /* Factor row layout */
+        .factor-row { display: flex; gap: 10px; }
+        .factor-sel { flex: 3; }
+        .cat-sel { flex: 1; min-width: 80px; }
+
+        /* Actions */
+        .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:24px; }
+        button{ border:1px solid var(--accent); background:#fff; color:var(--accent); padding:12px 24px; border-radius:12px; cursor:pointer; transition:.15s ease all; font-weight: 600; font-size: 14px; }
+        button.primary{ background:var(--accent); color:#fff; }
+        button:hover{ filter:brightness(.95); box-shadow:0 4px 16px rgba(0,93,168,.18); transform: translateY(-1px); }
         
-        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
-        
-        input, select {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            box-sizing: border-box;
+        /* Alerts */
+        .alert-box {
+            display: none;
+            background: #ffebee;
+            border: 1px solid var(--error);
+            color: #c62828;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 13px;
         }
-        input:focus, select:focus { outline: 1px solid var(--accent-color); }
-
-        .group-box {
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .group-title {
-            position: absolute;
-            top: -12px;
-            left: 15px;
-            background-color: #2d2d2d;
-            padding: 0 5px;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .factors-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .factor-row {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 10px;
-        }
-
-        /* Buttons */
-        .btn-group { display: flex; gap: 20px; margin-top: 20px; }
-        button {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 5px;
+        .alert-box button {
+            background: var(--error);
             color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            border: none;
+            padding: 6px 12px;
+            margin-top: 8px;
+            font-size: 12px;
         }
-        button:hover { opacity: 0.9; }
-        .btn-docx { background-color: var(--btn-docx); }
         
-        /* Hidden file input */
-        #fileInput { display: none; }
+        #libError {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--error); color: white; padding: 10px;
+            text-align: center; z-index: 1000; font-weight: bold;
+            display: none;
+        }
 
+        #fileInput, #templateInput { display: none; }
     </style>
 </head>
 <body>
 
+<!-- Critical Error Banner -->
+<div id="libError">
+    ⚠️ KRITICKÁ CHYBA: Knihovny se nenačetly. Zkontrolujte připojení k internetu.
+</div>
+
 <div class="container">
-    <h1>AURES Generátor LP (Web)</h1>
+    <header>
+        <h1>Lékařský posudek</h1>
+    </header>
 
-    <!-- Sekce pro nahrání PDF -->
-    <div class="drop-zone" id="dropZone">
-        <p>Klikněte sem nebo přetáhněte PDF dotazník</p>
-        <input type="file" id="fileInput" accept=".pdf">
-    </div>
-
-    <!-- Osobní údaje -->
-    <div class="group-box">
-        <span class="group-title">Údaje z PDF</span>
-        <div class="grid-2">
-            <div><label>Jméno</label><input type="text" id="jmeno"></div>
-            <div><label>Adresa</label><input type="text" id="adresa"></div>
-            <div><label>Datum narození</label><input type="text" id="narozeni"></div>
-            <div><label>PSČ</label><input type="text" id="psc"></div>
+    <section class="card form">
+        <!-- Upload Section -->
+        <div class="drop-zone" id="dropZone">
+            <p>📄 Klikněte sem nebo přetáhněte PDF dotazník</p>
+            <input type="file" id="fileInput" accept=".pdf">
         </div>
-    </div>
 
-    <!-- Faktory -->
-    <div class="group-box">
-        <span class="group-title">Faktory a Kategorie</span>
-        <div class="grid-2">
-            <!-- Levý sloupec faktorů -->
-            <div class="factors-container">
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
-            </div>
-            <!-- Pravý sloupec faktorů -->
-            <div class="factors-container">
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
-                <div class="factor-row"><select class="factor-sel"></select><select class="cat-sel"></select></div>
+        <!-- Personal Info -->
+        <div class="section-title">Osobní údaje z PDF</div>
+        
+        <div class="field half">
+            <label for="jmeno">Jméno a příjmení</label>
+            <input type="text" id="jmeno" placeholder="Načte se z PDF...">
+        </div>
+        <div class="field half">
+            <label for="narozeni">Datum narození</label>
+            <input type="text" id="narozeni" placeholder="Načte se z PDF...">
+        </div>
+        <div class="field code"> <!-- Uses CSS grid span logic -->
+            <label for="adresa">Adresa trvalého pobytu</label>
+            <input type="text" id="adresa" placeholder="Ulice, Město">
+        </div>
+        <div class="field quarter">
+            <label for="psc">PSČ</label>
+            <input type="text" id="psc" placeholder="PSČ">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Factors -->
+        <div class="section-title">Faktory a Kategorie</div>
+        
+        <!-- Left Column Factors -->
+        <div class="field half">
+            <div class="factor-container-left">
+                <!-- Generated via JS -->
             </div>
         </div>
-    </div>
+        <!-- Right Column Factors -->
+        <div class="field half">
+            <div class="factor-container-right">
+                <!-- Generated via JS -->
+            </div>
+        </div>
 
-    <!-- Detaily pozice -->
-    <div class="grid-4">
-        <div style="grid-column: span 1;">
-            <label>Pobočka</label>
+        <div class="divider"></div>
+
+        <!-- Job Details -->
+        <div class="section-title">Detaily pozice</div>
+
+        <div class="field third">
+            <label for="pobocka">Pobočka</label>
             <select id="pobocka"></select>
         </div>
-        <div style="grid-column: span 2;">
-            <label>Pozice (název)</label>
+        <div class="field third">
+            <label for="pozice">Pozice (název)</label>
             <input type="text" id="pozice">
         </div>
-        <div style="grid-column: span 1;">
-            <label>Konzultant</label>
+        <div class="field third">
+            <label for="konzultant">Konzultant</label>
             <select id="konzultant"></select>
         </div>
-    </div>
 
-    <div style="margin-bottom: 20px;">
-        <label>Pozice popis (šablona)</label>
-        <select id="pozice_popis"></select>
-    </div>
+        <div class="field">
+            <label for="pozice_popis">Pozice popis (šablona)</label>
+            <select id="pozice_popis"></select>
+        </div>
 
-    <!-- Tlačítka -->
-    <div class="btn-group">
-        <button class="btn-docx" onclick="generateDocx()">Generovat DOCX</button>
+        <!-- Manual Template Fallback -->
+        <div class="field alert-box" id="manualTemplateSection">
+            <div>⚠️ Prohlížeč zablokoval automatické načtení šablony (CORS/Lokální disk).</div>
+            <button onclick="document.getElementById('templateInput').click()">Vybrat soubor LP_template.docx ručně</button>
+            <div id="templateNameDisplay" style="margin-top:5px; font-style:italic; color:#333;"></div>
+            <input type="file" id="templateInput" accept=".docx">
+        </div>
+
+    </section>
+
+    <div class="actions">
+        <button class="primary" onclick="generateDocx()">Generovat DOCX</button>
     </div>
 </div>
 
 <script>
-    // --- DATA Z PYTHONU ---
-    const FACTOR_OPTIONS = [
-        "", "Zátěž chladem", "Fyzická zátěž", "Pracovní poloha", "Hluk", "Vibrace", "Prach", 
-        "Chemické látky a směsi", "------------------", "Biologické činitele", 
-        "Činnosti epidemiologicky závažné", "Elektrotechnik dle vyhl č.50 / 1978 Sb.", 
-        "Neionizující záření", "Obsluha tlakových nádob a zařízení vys. napětí", 
-        "Obsluha transport. a vysokozdvižných vozíků", "Obsluha transport. vytáhů a jeřábů a vázaní břemen", 
-        "Práce v noci", "Práce ve výškách a nad volnou hloubkou", "Psychická zátěž", 
-        "Řidič v pracovněprávním vztahu do 7,5 tuny", "Řidič v pracovněprávním vztahu nad 7,5 tuny", 
-        "Vyšetření v základním rozsahu", "Zátež teplem", "Zraková zátěž"
-    ];
-
+    // --- DATA ---
+    const FACTOR_OPTIONS = ["", "Zátěž chladem", "Fyzická zátěž", "Pracovní poloha", "Hluk", "Vibrace", "Prach", "Chemické látky a směsi", "------------------", "Biologické činitele", "Činnosti epidemiologicky závažné", "Elektrotechnik dle vyhl č.50 / 1978 Sb.", "Neionizující záření", "Obsluha tlakových nádob a zařízení vys. napětí", "Obsluha transport. a vysokozdvižných vozíků", "Obsluha transport. vytáhů a jeřábů a vázaní břemen", "Práce v noci", "Práce ve výškách a nad volnou hloubkou", "Psychická zátěž", "Řidič v pracovněprávním vztahu do 7,5 tuny", "Řidič v pracovněprávním vztahu nad 7,5 tuny", "Vyšetření v základním rozsahu", "Zátež teplem", "Zraková zátěž"];
     const CATEGORIES = ["", "Kat. 1", "Kat. 2", "Kat. 3", "Kat. 4"];
-
+    
     const position_descriptions = {
         "Call Centrum": "Činnost spojená s jednáním s klienty/zaměstnanci po telefonu, prací na počítači a administrativními úkony. Provoz: dvousměnný, Pracovní doba: 8 hodinové směny (pondělí - neděle) v průměru 40 hodin/týdně.",
         "Manažer/Zástupce manažera": "Administrativní činnost spojená s prací na počítači, s vedením pracovního týmu a jednání s klienty. Součástí práce je řízení služebního vozidla. Provoz: jednosměnný, Pracovní doba: 12 hodinové směny (krátký/dlouhý týden)",
@@ -225,92 +242,115 @@
         "Výpomoc při přepravě vozů mezi pobočkami": "Provádí přepravu zákazníků a vozidel. Součástí práce je řízení vozidla. Provoz: jednosměnný, DPP spolupráce.",
         "Výpomoc při prodeji vozů": "Činnost spojená s prací na počítači a jednání s klienty. Součástí práce je řízení vozidla. Práce je vykonávaná v administrativních budovách a zároveň ve venkovních prostorech. V zimních měsících není překročena hranice čtyř hodin za pracovní dobu, kdyby zaměstnanci byli vystaveni operativní teplotě +4 st. C a nižší. Práce je spojená se střídáním pobytu v teple a v chladu. Povaha práce nárazová (dohoda o provedení práce), směny maximálně 8hodinové."
     };
-
-    const branch_list = [
-        "Brno", "Chomutov", "České Budějovice", "Čestlice", "Hradec Králové", "Jihlava", "Kladno", "Kolín",
-        "Liberec", "Mladá Boleslav", "Olomouc", "Opava", "Ostrava", "Pardubice", "Plzeň", "Praha", "Sokolov",
-        "Tábor", "Teplice", "Ústí nad Labem", "Valašské Meziříčí", "Zlín", "Znojmo"
-    ];
-
+    const branch_list = ["Brno", "Chomutov", "České Budějovice", "Čestlice", "Hradec Králové", "Jihlava", "Kladno", "Kolín", "Liberec", "Mladá Boleslav", "Olomouc", "Opava", "Ostrava", "Pardubice", "Plzeň", "Praha", "Sokolov", "Tábor", "Teplice", "Ústí nad Labem", "Valašské Meziříčí", "Zlín", "Znojmo"];
+    
+    // Aktualizovaný seznam konzultantů
     const consultant_list = [
-        "Anna Brůčková", "Anna Kučerová", "Alžběta Čermáková", "Blanka Poliaková",
-        "Jan Jarma", "Kamila Hušková", "Karolína Kulvaitová", "Miroslava Válková", "Ondřej Dolejš"
+        "Andrea Jeřábková", 
+        "Anna Kučerová", 
+        "Blanka Poliaková", 
+        "Jan Jarma", 
+        "Kamila Hušková", 
+        "Karolína Kulvaitová", 
+        "Klára Stloukalová",
+        "Miroslava Válková", 
+        "Ondřej Dolejš"
     ];
 
-    // --- INICIALIZACE ---
+    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Naplnit selecty
+        // Library Check
+        if (typeof PizZip === 'undefined' || typeof window.docxtemplater === 'undefined') {
+            document.getElementById('libError').style.display = 'block';
+        }
+
+        // Fill Selects
         fillSelect('pobocka', branch_list);
         fillSelect('konzultant', consultant_list);
         fillSelect('pozice_popis', Object.keys(position_descriptions));
 
-        // Naplnit faktory (6 řádků)
-        const factorSelects = document.querySelectorAll('.factor-sel');
-        const catSelects = document.querySelectorAll('.cat-sel');
+        // Generate Factors HTML
+        const leftContainer = document.querySelector('.factor-container-left');
+        const rightContainer = document.querySelector('.factor-container-right');
         
-        factorSelects.forEach((sel, index) => {
-            fillSelectObj(sel, FACTOR_OPTIONS);
-            fillSelectObj(catSelects[index], CATEGORIES);
-        });
+        for(let i=0; i<6; i++) {
+            const row = document.createElement('div');
+            row.className = 'factor-row';
+            row.style.marginBottom = '10px';
+            
+            // Factor Select
+            const selF = document.createElement('select');
+            selF.className = 'factor-sel';
+            fillSelectObj(selF, FACTOR_OPTIONS);
+            
+            // Category Select
+            const selC = document.createElement('select');
+            selC.className = 'cat-sel';
+            fillSelectObj(selC, CATEGORIES);
 
-        // Výchozí hodnoty (z Python kódu)
-        factorSelects[0].value = "Vyšetření v základním rozsahu";
-        catSelects[0].value = "Kat. 1";
+            row.appendChild(selF);
+            row.appendChild(selC);
+
+            if(i < 3) leftContainer.appendChild(row);
+            else rightContainer.appendChild(row);
+        }
+
+        // Set defaults
+        const allFactors = document.querySelectorAll('.factor-sel');
+        const allCats = document.querySelectorAll('.cat-sel');
+        if(allFactors.length > 0) allFactors[0].value = "Vyšetření v základním rozsahu";
+        if(allCats.length > 0) allCats[0].value = "Kat. 1";
     });
 
     function fillSelect(id, array) {
         const sel = document.getElementById(id);
         array.sort((a, b) => a.localeCompare(b, 'cs')).forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item;
-            opt.textContent = item;
-            sel.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = item; opt.textContent = item; sel.appendChild(opt);
         });
     }
-
     function fillSelectObj(selectObj, array) {
         array.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item;
-            opt.textContent = item;
-            selectObj.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = item; opt.textContent = item; selectObj.appendChild(opt);
         });
     }
 
-    // --- PDF LOGIKA ---
+    // --- PDF LOGIC ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
+    const templateInput = document.getElementById('templateInput');
 
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
+        e.preventDefault(); dropZone.classList.remove('dragover');
         if (e.dataTransfer.files.length) processPDF(e.dataTransfer.files[0]);
     });
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) processPDF(e.target.files[0]);
+    fileInput.addEventListener('change', (e) => { if (e.target.files.length) processPDF(e.target.files[0]); });
+    
+    // Manual template indicator
+    templateInput.addEventListener('change', (e) => {
+        if(e.target.files.length) {
+            document.getElementById('templateNameDisplay').textContent = "Vybráno: " + e.target.files[0].name;
+            document.getElementById('manualTemplateSection').style.borderColor = "#388E3C";
+            document.getElementById('manualTemplateSection').style.background = "#e8f5e9";
+            document.getElementById('manualTemplateSection').style.color = "#2e7d32";
+        }
     });
 
     async function processPDF(file) {
         if (file.type !== 'application/pdf') { alert("Vyberte prosím PDF soubor."); return; }
-        
+        if (typeof PDFLib === 'undefined') { alert("Chyba: Knihovna PDF-LIB se nenačetla."); return; }
+
         const arrayBuffer = await file.arrayBuffer();
         const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
         const form = pdfDoc.getForm();
         
-        // Extrakce polí (názvy odpovídají Python skriptu)
-        // Pozn: pdf-lib vrací prázdný string pokud pole neexistuje, pokud to ošetříme
         try {
-            const getField = (name) => {
-                try { return form.getTextField(name).getText() || ""; } catch(e) { return ""; }
-            };
-
+            const getField = (name) => { try { return form.getTextField(name).getText() || ""; } catch(e) { return ""; } };
             const jmeno = getField('jmeno');
             let narozeni = getField('narozeni');
             if(narozeni.includes('/')) narozeni = narozeni.split('/')[0].trim();
-            
             const adresaUlice = getField('trvale-bydliste-ulice');
             const mesto = getField('trvale-bydliste-mesto');
             const psc = getField('trvale-bydliste-psc');
@@ -320,28 +360,34 @@
             document.getElementById('adresa').value = (adresaUlice + ", " + mesto).replace(/^, |, $/g, '');
             document.getElementById('psc').value = psc;
             
-            // dropZone.style.borderColor = 'green';
-            dropZone.querySelector('p').textContent = "PDF načteno: " + file.name;
-        } catch (err) {
-            console.error(err);
-            alert("Chyba při čtení PDF formuláře. Je to AcroForm?");
-        }
+            dropZone.innerHTML = `<p style="font-weight:bold">✅ PDF načteno: ${file.name}</p>`;
+            dropZone.classList.add('drop-zone-success');
+        } catch (err) { console.error(err); alert("Chyba při čtení PDF."); }
     }
 
-    // --- DOCX GENERACE ---
+    // --- GENERATOR ---
     async function generateDocx() {
-        // 1. Načtení template souboru (musí být ve stejné složce)
-        let templateBuffer;
-        try {
-            const response = await fetch('LP_template.docx');
-            if (!response.ok) throw new Error("Nelze načíst LP_template.docx");
-            templateBuffer = await response.arrayBuffer();
-        } catch (e) {
-            alert("Chyba: Soubor LP_template.docx nebyl nalezen ve stejné složce jako index.html.");
+        if (typeof PizZip === 'undefined') {
+            alert("FATÁLNÍ CHYBA: Knihovna PizZip není načtena.");
             return;
         }
 
-        // 2. Příprava dat
+        let templateBuffer;
+        try {
+            if (templateInput.files.length > 0) {
+                 templateBuffer = await templateInput.files[0].arrayBuffer();
+            } else {
+                const response = await fetch('LP_template.docx');
+                if (!response.ok) throw new Error("Fetch failed");
+                templateBuffer = await response.arrayBuffer();
+            }
+        } catch (e) {
+            document.getElementById('manualTemplateSection').style.display = 'block';
+            alert("Prohlížeč zablokoval automatické načtení šablony. Použijte tlačítko pro ruční výběr v dolní části formuláře.");
+            return;
+        }
+
+        // Data Collection
         const factorSelects = document.querySelectorAll('.factor-sel');
         const catSelects = document.querySelectorAll('.cat-sel');
         const factorsData = {};
@@ -365,31 +411,25 @@
             ...factorsData
         };
 
-        // 3. Renderování DOCX
-        const zip = new PizZip(templateBuffer);
-        const doc = new window.docxtemplater(zip, {
-            paragraphLoop: true,
-            linebreaks: true,
-        });
-
+        // Generation
         try {
+            const zip = new PizZip(templateBuffer);
+            const doc = new window.docxtemplater(zip, { 
+                paragraphLoop: true, 
+                linebreaks: true,
+                nullGetter: function() { return ""; } 
+            });
+            
             doc.render(data);
+            
+            const out = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+            const surname = data.jmeno.split(" ").pop() || "nezadano";
+            saveAs(out, `LP_${surname}.docx`);
         } catch (error) {
-            alert("Chyba při generování: " + error.message);
-            console.log(error);
-            return;
+            alert("Chyba při generování DOCX: " + error.message);
+            console.error(error);
         }
-
-        // 4. Uložení
-        const out = doc.getZip().generate({
-            type: "blob",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
-        
-        const surname = data.jmeno.split(" ").pop() || "nezadano";
-        saveAs(out, `LP_${surname}.docx`);
     }
 </script>
-
 </body>
 </html>
