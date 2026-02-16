@@ -270,10 +270,168 @@
         #templateInput {
             display: none;
         }
+
+        /* === SPLASH SCREEN === */
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a1628 0%, #102a43 40%, #005DA8 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #splash.hide {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        #splash .logo-text {
+            text-align: center;
+            animation: logoEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: scale(0.7);
+            opacity: 0;
+        }
+
+        @keyframes logoEntry {
+            0% {
+                transform: scale(0.7) translateY(30px);
+                opacity: 0;
+                filter: blur(8px);
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        #splash .brand-aures {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 52px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        #splash .brand-aures span {
+            font-weight: 300;
+            color: #a0c4e8;
+        }
+
+        #splash .brand-sub {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 10px;
+            animation: logoEntry 0.6s 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        #splash .brand-sub .badge {
+            padding: 4px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+        }
+
+        #splash .brand-sub .aaa {
+            color: #e53e3e;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 2px;
+        }
+
+        #splash .brand-sub .moto {
+            color: #38a89d;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        #splash .brand-sub .resul {
+            background: #48bb78;
+            color: #fff;
+        }
+
+        #splash .brand-sub .sep {
+            color: #4a6a8a;
+            font-size: 18px;
+        }
+
+        #splash .tagline {
+            color: #7ea3c4;
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            animation: logoEntry 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        #splash .loader {
+            width: 40px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            margin-top: 30px;
+            overflow: hidden;
+            animation: logoEntry 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        #splash .loader::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #38bdf8;
+            border-radius: 3px;
+            animation: load 0.8s 0.4s ease forwards;
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+
+        @keyframes load {
+            0% {
+                transform: scaleX(0);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- Splash Screen -->
+    <div id="splash">
+        <div class="logo-text">
+            <div class="brand-aures">AURES<span>HOLDINGS</span></div>
+        </div>
+        <div class="brand-sub">
+            <span class="aaa">AAA AUTO</span>
+            <span class="sep">|</span>
+            <span class="moto">Mototechna</span>
+            <span class="sep">|</span>
+            <span class="badge resul">RESULMATIC</span>
+        </div>
+        <div class="tagline">Lékařský posudek</div>
+        <div class="loader"></div>
+    </div>
 
     <!-- Critical Error Banner -->
     <div id="libError">
@@ -426,6 +584,15 @@
     </div>
 
     <script>
+        // --- SPLASH SCREEN ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash');
+                splash.classList.add('hide');
+                setTimeout(() => splash.remove(), 400);
+            }, 1200);
+        });
+
         // --- DATA ---
         const FACTOR_OPTIONS = ["", "Zátěž chladem", "Fyzická zátěž", "Pracovní poloha", "Hluk", "Vibrace", "Prach", "Chemické látky a směsi", "------------------", "Biologické činitele", "Činnosti epidemiologicky závažné", "Elektrotechnik dle vyhl č.50 / 1978 Sb.", "Neionizující záření", "Obsluha tlakových nádob a zařízení vys. napětí", "Obsluha transport. a vysokozdvižných vozíků", "Obsluha transport. vytáhů a jeřábů a vázaní břemen", "Práce v noci", "Práce ve výškách a nad volnou hloubkou", "Psychická zátěž", "Řidič v pracovněprávním vztahu do 7,5 tuny", "Řidič v pracovněprávním vztahu nad 7,5 tuny", "Vyšetření v základním rozsahu", "Zátež teplem", "Zraková zátěž"];
         const CATEGORIES = ["", "Kat. 1", "Kat. 2", "Kat. 3", "Kat. 4"];
