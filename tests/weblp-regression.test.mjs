@@ -53,6 +53,7 @@ test('redesigned UI uses coversheet-style structure while preserving form contra
   }
 
   assert.match(html, /class="app-header"/, 'Missing coversheet-style header');
+  assert.doesNotMatch(html, /HR lékařský posudek/, 'Header eyebrow should be removed');
   assert.match(html, /class="form-section"/, 'Missing grouped form sections');
   assert.doesNotMatch(html, /class="section-index"/, 'Section numbering should not be visible in headings');
   assert.match(html, /class="[^"]*\bsticky-actions\b/, 'Generate action should be sticky');
@@ -62,4 +63,11 @@ test('redesigned UI uses coversheet-style structure while preserving form contra
 test('consultant is removed from visible UI while keeping generator contract', () => {
   assert.doesNotMatch(html, /<label\s+for="konzultant"/, 'Consultant should not be a visible form field');
   assert.match(html, /<select\s+id="konzultant"[^>]*\bhidden\b/, 'Generator contract should keep hidden #konzultant select');
+});
+
+test('factor rows start compact and can be expanded on demand', () => {
+  assert.match(html, /const INITIAL_FACTOR_ROWS = 2;/, 'Factors should start with two visible rows');
+  assert.match(html, /const MAX_FACTOR_ROWS = 8;/, 'Factors should keep the original eight-row maximum');
+  assert.match(html, /id="addFactorBtn"/, 'Missing add-factor button');
+  assert.match(html, /addFactorRow\(\)/, 'Add-factor button should call the factor-row helper');
 });

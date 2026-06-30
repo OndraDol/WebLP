@@ -609,22 +609,42 @@
         }
 
         .factor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 10px 16px;
+        }
+
+        .factor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .factor-row {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 136px;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
         .factor-sel,
         .cat-sel {
             min-width: 0;
             width: 100%;
+        }
+
+        .factor-actions {
+            align-items: flex-start;
+        }
+
+        .add-factor-btn {
+            min-height: 38px;
+            padding: 8px 12px;
+            border-color: var(--line-strong);
+            background: var(--surface-soft);
+        }
+
+        .add-factor-btn:disabled {
+            cursor: default;
+            opacity: .6;
+            box-shadow: none;
         }
 
         .alert-box {
@@ -703,7 +723,7 @@
                 flex-direction: column;
             }
 
-            .factor-grid {
+            .factor-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -736,7 +756,6 @@
     <div class="container">
         <header class="app-header">
             <div>
-                <p class="eyebrow">HR lékařský posudek</p>
             <h1>Lékařský posudek</h1>
             </div>
             <p class="header-meta">AURES Holdings</p>
@@ -873,17 +892,11 @@
             <!-- Factors -->
             <div class="section-title">Faktory a Kategorie</div>
 
-            <!-- Left Column Factors -->
-            <div class="field half">
-                <div class="factor-container-left">
-                    <!-- Generated via JS -->
-                </div>
+            <div class="field full">
+                <div class="factor-list" id="factorList"></div>
             </div>
-            <!-- Right Column Factors -->
-            <div class="field half">
-                <div class="factor-container-right">
-                    <!-- Generated via JS -->
-                </div>
+            <div class="field full factor-actions">
+                <button class="add-factor-btn" id="addFactorBtn" type="button" onclick="addFactorRow()">+ Přidat faktor</button>
             </div>
 
             <!-- Manual Template Fallback -->
@@ -917,6 +930,9 @@
         // --- DATA ---
         const FACTOR_OPTIONS = ["", "Zátěž chladem", "Fyzická zátěž", "Pracovní poloha", "Hluk", "Vibrace", "Prach", "Chemické látky a směsi", "------------------", "Biologické činitele", "Činnosti epidemiologicky závažné", "Elektrotechnik dle vyhl č.50 / 1978 Sb.", "Neionizující záření", "Obsluha tlakových nádob a zařízení vys. napětí", "Obsluha transport. a vysokozdvižných vozíků", "Obsluha transport. vytáhů a jeřábů a vázaní břemen", "Práce v noci", "Práce ve výškách a nad volnou hloubkou", "Psychická zátěž", "Řidič v pracovněprávním vztahu do 7,5 tuny", "Řidič v pracovněprávním vztahu nad 7,5 tuny", "Vyšetření v základním rozsahu", "Zátež teplem", "Zraková zátěž"];
         const CATEGORIES = ["", "Kat. 1", "Kat. 2", "Kat. 3", "Kat. 4"];
+        const INITIAL_FACTOR_ROWS = 2;
+        const MAX_FACTOR_ROWS = 8;
+        let factorRowCount = 0;
 
         const position_descriptions = {
             "Call Centrum": "Činnost spojená s jednáním s klienty/zaměstnanci po telefonu, prací na počítači a administrativními úkony. Provoz: dvousměnný, Pracovní doba: 8 hodinové směny (pondělí - neděle) v průměru 40 hodin/týdně.",
@@ -999,31 +1015,8 @@
                 cinnostiSel.appendChild(opt);
             });
 
-            // Generate Factors HTML
-            const leftContainer = document.querySelector('.factor-container-left');
-            const rightContainer = document.querySelector('.factor-container-right');
-
-            for (let i = 0; i < 8; i++) {
-                const row = document.createElement('div');
-                row.className = 'factor-row';
-                row.style.marginBottom = '10px';
-
-                // Factor Select
-                const selF = document.createElement('select');
-                selF.className = 'factor-sel';
-                fillSelectObj(selF, FACTOR_OPTIONS);
-
-                // Category Select
-                const selC = document.createElement('select');
-                selC.className = 'cat-sel';
-                fillSelectObj(selC, CATEGORIES);
-
-                row.appendChild(selF);
-                row.appendChild(selC);
-
-                if (i < 4) leftContainer.appendChild(row);
-                else rightContainer.appendChild(row);
-            }
+            // Generate compact default factor rows
+            for (let i = 0; i < INITIAL_FACTOR_ROWS; i++) addFactorRow();
 
             // Set defaults
             const allFactors = document.querySelectorAll('.factor-sel');
@@ -1042,6 +1035,35 @@
             array.forEach(item => {
                 const opt = document.createElement('option'); opt.value = item; opt.textContent = item; selectObj.appendChild(opt);
             });
+        }
+
+        function addFactorRow() {
+            if (factorRowCount >= MAX_FACTOR_ROWS) return;
+
+            const factorList = document.getElementById('factorList');
+            const addButton = document.getElementById('addFactorBtn');
+            if (!factorList) return;
+
+            const row = document.createElement('div');
+            row.className = 'factor-row';
+
+            const selF = document.createElement('select');
+            selF.className = 'factor-sel';
+            fillSelectObj(selF, FACTOR_OPTIONS);
+
+            const selC = document.createElement('select');
+            selC.className = 'cat-sel';
+            fillSelectObj(selC, CATEGORIES);
+
+            row.appendChild(selF);
+            row.appendChild(selC);
+            factorList.appendChild(row);
+            factorRowCount += 1;
+
+            if (addButton && factorRowCount >= MAX_FACTOR_ROWS) {
+                addButton.disabled = true;
+                addButton.textContent = 'Maximum faktorů přidán';
+            }
         }
 
         // --- PDF LOGIC ---
