@@ -72,6 +72,20 @@ test('factor rows start compact and can be expanded on demand', () => {
   assert.match(html, /addFactorRow\(\)/, 'Add-factor button should call the factor-row helper');
 });
 
+test('splash uses executive ignition concept while preserving timing', () => {
+  assert.match(html, /id="splash"/, 'Splash overlay should stay present');
+  assert.match(html, /Lékařská prohlídka/, 'Splash should use the requested headline');
+  assert.match(html, /class="splash-ignition"/, 'Missing executive ignition composition layer');
+  assert.match(html, /class="splash-mark"/, 'Missing central LP logo mark');
+  assert.match(html, /<svg[^>]*class="splash-mark-svg"/, 'Logo mark should be inline SVG, not an external asset');
+  assert.match(html, /<text[^>]*>LP<\/text>/, 'Logo mark should render the LP initials');
+  assert.match(html, /class="splash-orbit"/, 'Missing neon launch ring');
+  assert.match(html, /class="splash-pulse"/, 'Missing medical pulse motif');
+  assert.match(html, /class="splash-progress"/, 'Missing short progress line');
+  assert.match(html, /setTimeout\(\(\) => \{[\s\S]*?splash\.classList\.add\('hide'\);[\s\S]*?\},\s*1200\);/, 'Splash active timing should remain 1200ms');
+  assert.match(html, /setTimeout\(\(\) => splash\.remove\(\),\s*400\);/, 'Splash fade-out removal should remain 400ms');
+});
+
 test('decorative flying dogs stay outside the form contract', () => {
   const dogAsset = new URL('../assets/flying-dog.png', import.meta.url);
   assert.ok(existsSync(dogAsset), 'Missing decorative dog asset');

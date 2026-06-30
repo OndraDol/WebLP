@@ -274,142 +274,274 @@
         /* === SPLASH SCREEN === */
         #splash {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0a1628 0%, #102a43 40%, #005DA8 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
             z-index: 9999;
+            color: #ffffff;
+            background:
+                radial-gradient(circle at 50% 44%, rgba(56, 189, 248, .28), transparent 25%),
+                radial-gradient(circle at 50% 50%, rgba(0, 93, 168, .32), transparent 42%),
+                linear-gradient(145deg, #050b16 0%, #0a1628 46%, #003a68 100%);
             opacity: 1;
-            transition: opacity 0.4s ease, transform 0.4s ease;
+            transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease;
+        }
+
+        #splash::before {
+            content: '';
+            position: absolute;
+            inset: -12%;
+            background:
+                linear-gradient(rgba(125, 211, 252, .055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(125, 211, 252, .055) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: radial-gradient(circle at center, #000 0 54%, transparent 78%);
+            animation: splashGrid 1.2s linear infinite;
+        }
+
+        #splash::after {
+            content: '';
+            position: absolute;
+            top: -16%;
+            bottom: -16%;
+            left: 50%;
+            width: 2px;
+            background: linear-gradient(180deg, transparent, rgba(125, 211, 252, .86), transparent);
+            box-shadow:
+                0 0 28px rgba(56, 189, 248, .85),
+                0 0 72px rgba(0, 93, 168, .65);
+            transform: translateX(-50%) scaleY(0);
+            transform-origin: center;
+            animation: splashBeam 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         #splash.hide {
             opacity: 0;
             transform: scale(1.05);
+            filter: blur(8px);
             pointer-events: none;
         }
 
-        #splash .logo-text {
+        .splash-ignition {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            justify-items: center;
+            width: min(520px, calc(100vw - 48px));
             text-align: center;
-            animation: logoEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            transform: scale(0.7);
+        }
+
+        .splash-orbit {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 190px;
+            aspect-ratio: 1;
+            margin-bottom: 26px;
+            border: 1px solid rgba(125, 211, 252, .42);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 0 34px rgba(56, 189, 248, .14),
+                0 0 34px rgba(56, 189, 248, .2);
+            animation: orbitEntry .72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
         }
 
-        @keyframes logoEntry {
-            0% {
-                transform: scale(0.7) translateY(30px);
-                opacity: 0;
-                filter: blur(8px);
-            }
-
-            100% {
-                transform: scale(1) translateY(0);
-                opacity: 1;
-                filter: blur(0);
-            }
+        .splash-orbit::before,
+        .splash-orbit::after {
+            content: '';
+            position: absolute;
+            inset: 14px;
+            border-radius: 50%;
+            border: 1px solid rgba(125, 211, 252, .34);
+            animation: orbitPulse 1.2s ease-out infinite;
         }
 
-        #splash .brand-aures {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            font-size: 52px;
-            font-weight: 800;
-            letter-spacing: 3px;
+        .splash-orbit::after {
+            inset: -18px;
+            border-color: rgba(0, 93, 168, .38);
+            animation-delay: .18s;
+        }
+
+        .splash-mark {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 118px;
+            aspect-ratio: 1;
+            border-radius: 30px;
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, .19), rgba(255, 255, 255, .045)),
+                linear-gradient(145deg, rgba(0, 93, 168, .68), rgba(3, 18, 33, .88));
+            border: 1px solid rgba(186, 230, 253, .48);
+            box-shadow:
+                0 18px 50px rgba(0, 0, 0, .34),
+                0 0 42px rgba(56, 189, 248, .34);
+        }
+
+        .splash-mark-svg {
+            width: 82px;
+            height: 82px;
+            filter: drop-shadow(0 0 14px rgba(125, 211, 252, .48));
+        }
+
+        .splash-copy {
+            animation: splashCopy .62s .18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(22px);
+        }
+
+        .splash-kicker {
+            margin: 0 0 9px;
+            color: #8edcff;
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+        }
+
+        .splash-title {
+            margin: 0;
             color: #ffffff;
-            margin-bottom: 2px;
+            font-size: clamp(34px, 5vw, 58px);
+            line-height: 1;
+            letter-spacing: 0;
+            font-weight: 850;
+            text-shadow: 0 0 32px rgba(56, 189, 248, .34);
         }
 
-        #splash .brand-aures span {
-            font-weight: 300;
-            color: #a0c4e8;
-        }
-
-        #splash .brand-sub {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 18px;
-            margin-top: 10px;
-            animation: logoEntry 0.6s 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-        }
-
-        #splash .brand-sub .badge {
-            padding: 4px 14px;
-            border-radius: 6px;
+        .splash-brand {
+            margin: 12px 0 0;
+            color: rgba(223, 242, 254, .78);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: 1.5px;
         }
 
-        #splash .brand-sub .aaa {
-            color: #e53e3e;
-            font-weight: 800;
-            font-size: 15px;
-            letter-spacing: 2px;
+        .splash-pulse {
+            width: min(280px, 70vw);
+            height: 28px;
+            margin-top: 22px;
+            color: #38bdf8;
+            opacity: .88;
         }
 
-        #splash .brand-sub .moto {
-            color: #38a89d;
-            font-weight: 700;
-            font-size: 14px;
+        .splash-pulse path {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 360;
+            stroke-dashoffset: 360;
+            animation: pulseDraw .88s .22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        #splash .brand-sub .resul {
-            background: #48bb78;
-            color: #fff;
-        }
-
-        #splash .brand-sub .sep {
-            color: #4a6a8a;
-            font-size: 18px;
-        }
-
-        #splash .tagline {
-            color: #7ea3c4;
-            font-size: 14px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            margin-top: 20px;
-            animation: logoEntry 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-        }
-
-        #splash .loader {
-            width: 40px;
+        .splash-progress {
+            position: absolute;
+            left: 50%;
+            bottom: 72px;
+            width: min(240px, 48vw);
             height: 3px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 3px;
-            margin-top: 30px;
             overflow: hidden;
-            animation: logoEntry 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .16);
+            transform: translateX(-50%);
+            z-index: 3;
         }
 
-        #splash .loader::after {
+        .splash-progress::after {
             content: '';
             display: block;
             width: 100%;
             height: 100%;
-            background: #38bdf8;
-            border-radius: 3px;
-            animation: load 0.8s 0.4s ease forwards;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #38bdf8, #ffffff, #005DA8);
             transform: scaleX(0);
             transform-origin: left;
+            animation: splashLoad .82s .36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes load {
+        @keyframes splashGrid {
+            to {
+                transform: translate3d(28px, 28px, 0);
+            }
+        }
+
+        @keyframes splashBeam {
             0% {
-                transform: scaleX(0);
+                opacity: 0;
+                transform: translateX(-50%) scaleY(0);
+            }
+
+            42% {
+                opacity: 1;
+                transform: translateX(-50%) scaleY(1);
             }
 
             100% {
+                opacity: .34;
+                transform: translateX(-50%) scaleY(.62);
+            }
+        }
+
+        @keyframes orbitEntry {
+            0% {
+                opacity: 0;
+                transform: scale(.72) rotate(-16deg);
+                filter: blur(8px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes orbitPulse {
+            0% {
+                opacity: .82;
+                transform: scale(.8);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.42);
+            }
+        }
+
+        @keyframes splashCopy {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulseDraw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes splashLoad {
+            to {
                 transform: scaleX(1);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            #splash::before,
+            #splash::after,
+            .splash-orbit,
+            .splash-orbit::before,
+            .splash-orbit::after,
+            .splash-copy,
+            .splash-pulse path,
+            .splash-progress::after {
+                animation-duration: .01ms;
+                animation-iteration-count: 1;
             }
         }
 
@@ -918,18 +1050,36 @@
 
     <!-- Splash Screen -->
     <div id="splash">
-        <div class="logo-text">
-            <div class="brand-aures">AURES<span>HOLDINGS</span></div>
+        <div class="splash-ignition" role="status" aria-label="Načítá se Lékařská prohlídka">
+            <div class="splash-orbit" aria-hidden="true">
+                <div class="splash-mark">
+                    <svg class="splash-mark-svg" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+                        <defs>
+                            <linearGradient id="lpMarkGlow" x1="16" y1="12" x2="82" y2="88">
+                                <stop offset="0" stop-color="#ffffff" />
+                                <stop offset=".42" stop-color="#7dd3fc" />
+                                <stop offset="1" stop-color="#38bdf8" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M48 9 76 21v22c0 20-11 34-28 44-17-10-28-24-28-44V21L48 9Z"
+                            fill="rgba(5, 16, 31, .34)" stroke="url(#lpMarkGlow)" stroke-width="3" />
+                        <text x="48" y="59" fill="url(#lpMarkGlow)" font-family="Segoe UI, Arial, sans-serif"
+                            font-size="30" font-weight="850" letter-spacing="-1" text-anchor="middle">LP</text>
+                        <path d="M24 51h13l5-12 8 25 6-17h16" fill="none" stroke="#ffffff" stroke-width="3.4"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+            </div>
+            <div class="splash-copy">
+                <p class="splash-kicker">AURES Holdings</p>
+                <h1 class="splash-title">Lékařská prohlídka</h1>
+                <p class="splash-brand">LP generátor připraven</p>
+                <svg class="splash-pulse" viewBox="0 0 280 28" aria-hidden="true" focusable="false">
+                    <path d="M2 15h62l9-10 15 20 13-14h39l8-8 13 18 12-12h105" />
+                </svg>
+            </div>
         </div>
-        <div class="brand-sub">
-            <span class="aaa">AAA AUTO</span>
-            <span class="sep">|</span>
-            <span class="moto">Mototechna</span>
-            <span class="sep">|</span>
-            <span class="badge resul">RESULMATIC</span>
-        </div>
-        <div class="tagline">Lékařský posudek</div>
-        <div class="loader"></div>
+        <div class="splash-progress" aria-hidden="true"></div>
     </div>
 
     <!-- Critical Error Banner -->
