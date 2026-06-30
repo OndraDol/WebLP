@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
@@ -70,4 +70,15 @@ test('factor rows start compact and can be expanded on demand', () => {
   assert.match(html, /const MAX_FACTOR_ROWS = 8;/, 'Factors should keep the original eight-row maximum');
   assert.match(html, /id="addFactorBtn"/, 'Missing add-factor button');
   assert.match(html, /addFactorRow\(\)/, 'Add-factor button should call the factor-row helper');
+});
+
+test('decorative flying dogs stay outside the form contract', () => {
+  const dogAsset = new URL('../assets/flying-dog.png', import.meta.url);
+  assert.ok(existsSync(dogAsset), 'Missing decorative dog asset');
+  assert.match(html, /class="dog-fleet" aria-hidden="true"/, 'Missing non-semantic dog animation layer');
+  assert.match(html, /pointer-events:\s*none/, 'Dog animation layer should never block form controls');
+  assert.match(html, /@keyframes dogDrift/, 'Dogs should have a drifting animation');
+  assert.match(html, /@keyframes dogSpin/, 'Dogs should have a spinning animation');
+  assert.equal((html.match(/class="flying-dog/g) || []).length, 6, 'Expected six flying dogs');
+  assert.match(html, /assets\/flying-dog\.png/, 'Dog layer should use the checked-in asset');
 });
