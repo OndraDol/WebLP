@@ -79,6 +79,7 @@ test('decorative flying dogs stay outside the form contract', () => {
   assert.match(html, /pointer-events:\s*none/, 'Dog animation layer should never block form controls');
   assert.match(html, /@keyframes dogDrift/, 'Dogs should have a drifting animation');
   assert.match(html, /@keyframes dogSpin/, 'Dogs should have a spinning animation');
-  assert.equal((html.match(/class="flying-dog/g) || []).length, 6, 'Expected six flying dogs');
+  assert.equal((html.match(/class="flying-dog/g) || []).length, 12, 'Expected twelve flying dogs');
+  assert.match(html, /--size:\s*clamp\(92px,\s*8\.4vw,\s*152px\)/, 'Dogs should be doubled in size');
   assert.match(html, /assets\/flying-dog\.png/, 'Dog layer should use the checked-in asset');
 });

@@ -455,13 +455,13 @@
         }
 
         .flying-dog {
-            --size: clamp(46px, 4.2vw, 76px);
+            --size: clamp(92px, 8.4vw, 152px);
             --duration: 20s;
             --spin-duration: 8s;
-            --sway: 22px;
+            --sway: 24px;
             position: absolute;
             width: var(--size);
-            opacity: .88;
+            opacity: .86;
             will-change: transform;
             animation: dogDrift var(--duration) ease-in-out var(--delay, 0s) infinite alternate;
         }
@@ -476,11 +476,11 @@
         }
 
         .dog-left {
-            left: max(12px, calc((100vw - 1180px) / 2 - 116px));
+            left: max(12px, calc((100vw - 1180px) / 2 - 190px));
         }
 
         .dog-right {
-            right: max(12px, calc((100vw - 1180px) / 2 - 116px));
+            right: max(12px, calc((100vw - 1180px) / 2 - 190px));
             animation-name: dogDriftRight;
         }
 
@@ -531,6 +531,54 @@
             --sway: 28px;
         }
 
+        .dog-seven {
+            top: 18vh;
+            --duration: 22s;
+            --delay: -15s;
+            --spin-duration: 9s;
+            --sway: 18px;
+        }
+
+        .dog-eight {
+            top: 52vh;
+            --duration: 26s;
+            --delay: -19s;
+            --spin-duration: 12s;
+            --sway: 22px;
+        }
+
+        .dog-nine {
+            top: 83vh;
+            --duration: 20s;
+            --delay: -2s;
+            --spin-duration: 10s;
+            --sway: 20px;
+        }
+
+        .dog-ten {
+            top: 24vh;
+            --duration: 25s;
+            --delay: -17s;
+            --spin-duration: 8s;
+            --sway: 26px;
+        }
+
+        .dog-eleven {
+            top: 58vh;
+            --duration: 21s;
+            --delay: -6s;
+            --spin-duration: 11s;
+            --sway: 18px;
+        }
+
+        .dog-twelve {
+            top: 88vh;
+            --duration: 27s;
+            --delay: -21s;
+            --spin-duration: 13s;
+            --sway: 24px;
+        }
+
         @keyframes dogDrift {
             0% {
                 transform: translate3d(0, -18vh, 0) rotate(-8deg);
@@ -573,7 +621,7 @@
             }
         }
 
-        @media (max-width: 1400px) {
+        @media (max-width: 1540px) {
             .dog-fleet {
                 display: none;
             }
@@ -893,9 +941,15 @@
         <div class="flying-dog dog-left dog-one"><img src="assets/flying-dog.png" alt=""></div>
         <div class="flying-dog dog-left dog-two"><img src="assets/flying-dog.png" alt=""></div>
         <div class="flying-dog dog-left dog-three"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-left dog-seven"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-left dog-eight"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-left dog-nine"><img src="assets/flying-dog.png" alt=""></div>
         <div class="flying-dog dog-right dog-four"><img src="assets/flying-dog.png" alt=""></div>
         <div class="flying-dog dog-right dog-five"><img src="assets/flying-dog.png" alt=""></div>
         <div class="flying-dog dog-right dog-six"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-right dog-ten"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-right dog-eleven"><img src="assets/flying-dog.png" alt=""></div>
+        <div class="flying-dog dog-right dog-twelve"><img src="assets/flying-dog.png" alt=""></div>
     </div>
 
     <div class="container">
