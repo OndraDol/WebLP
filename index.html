@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
@@ -1443,18 +1444,35 @@
             if (file.type !== 'application/pdf') { alert("Vyberte prosím PDF soubor."); return; }
             if (typeof PDFLib === 'undefined') { alert("Chyba: Knihovna PDF-LIB se nenačetla."); return; }
 
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-            const form = pdfDoc.getForm();
-
             try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const form = pdfDoc.getForm();
+
+                // Starší dotazník: vyplnitelný formulář (AcroForm) s pojmenovanými poli.
                 const getField = (name) => { try { return form.getTextField(name).getText() || ""; } catch (e) { return ""; } };
-                const jmeno = getField('jmeno');
-                let narozeni = getField('narozeni');
+                let data = {
+                    jmeno: getField('jmeno'),
+                    narozeni: getField('narozeni'),
+                    adresaUlice: getField('trvale-bydliste-ulice'),
+                    mesto: getField('trvale-bydliste-mesto'),
+                    psc: getField('trvale-bydliste-psc'),
+                };
+
+                // Novější dotazník (od 11/2026): plochá tabulka bez formulářových polí, údaje se čtou z textu.
+                if (!Object.values(data).some(Boolean)) {
+                    if (typeof pdfjsLib === 'undefined') { alert("Chyba: Knihovna PDF.js se nenačetla."); return; }
+                    data = parseQuestionnaireText(await readPdfTextItems(arrayBuffer));
+                }
+
+                if (!Object.values(data).some(Boolean)) {
+                    alert("V PDF se nepodařilo najít osobní údaje. Zkontrolujte, že jde o osobní dotazník, případně údaje vyplňte ručně.");
+                    return;
+                }
+
+                const { jmeno, adresaUlice, mesto, psc } = data;
+                let narozeni = data.narozeni;
                 if (narozeni.includes('/')) narozeni = narozeni.split('/')[0].trim();
-                const adresaUlice = getField('trvale-bydliste-ulice');
-                const mesto = getField('trvale-bydliste-mesto');
-                const psc = getField('trvale-bydliste-psc');
 
                 document.getElementById('jmeno').value = jmeno;
                 document.getElementById('narozeni').value = narozeni;
@@ -1465,6 +1483,70 @@
                 dropZone.classList.add('drop-zone-success');
             } catch (err) { console.error(err); alert("Chyba při čtení PDF."); }
         }
+
+        async function readPdfTextItems(arrayBuffer) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            // PDF.js si buffer přebírá, proto dostane kopii.
+            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) }).promise;
+            const page = await pdf.getPage(1);
+            const content = await page.getTextContent();
+            return content.items.map((it) => ({ str: it.str, x: it.transform[4], y: it.transform[5] }));
+        }
+
+        // --- QUESTIONNAIRE TEXT PARSER ---
+        // Osobní dotazník jako tabulka: popisky ve sloupcích 1 a 3, hodnoty ve sloupcích 2 a 4.
+        // Hranice sloupců se berou z hlavičky „Adresa trvalého bydliště | Ulice/č. | Město | PSČ“.
+        function parseQuestionnaireText(items) {
+            const empty = { jmeno: "", narozeni: "", adresaUlice: "", mesto: "", psc: "" };
+            const cells = items
+                .map((it) => ({ str: String(it.str).replace(/\s+/g, ' ').trim(), x: it.x, y: it.y }))
+                .filter((c) => c.str);
+            const ROW_TOLERANCE = 3;
+            const COL_TOLERANCE = 6;
+            const key = (s) => s.toLocaleLowerCase('cs').replace(/\s+/g, '');
+            const find = (label) => cells.find((c) => key(c.str) === key(label));
+            const rowOf = (cell) => cells.filter((c) => Math.abs(c.y - cell.y) <= ROW_TOLERANCE).sort((a, b) => a.x - b.x);
+            const textBetween = (row, from, to) => row
+                .filter((c) => c.x >= from - COL_TOLERANCE && c.x < to - COL_TOLERANCE)
+                .map((c) => c.str).join(' ').trim();
+
+            const addressLabel = find('Adresa trvalého bydliště');
+            if (!addressLabel) return empty;
+            const addressHeader = rowOf(addressLabel);
+            const colStreet = addressHeader.find((c) => key(c.str) === key('Ulice/č.'));
+            const colCity = addressHeader.find((c) => key(c.str) === key('Město'));
+            const colZip = addressHeader.find((c) => key(c.str) === key('PSČ'));
+            if (!colStreet || !colCity || !colZip) return empty;
+            const [c1, c2, c3] = [colStreet.x, colCity.x, colZip.x];
+
+            // Hodnota vlevo (sloupec 2) u popisku ve sloupci 1.
+            const leftValue = (label) => {
+                const cell = find(label);
+                return cell ? textBetween(rowOf(cell), c1, c2) : "";
+            };
+
+            // Řádek s adresou je první řádek pod hlavičkou; pokud v něm je popisek dalšího bloku, adresa je prázdná.
+            const below = cells.filter((c) => c.y < addressLabel.y - ROW_TOLERANCE);
+            let adresaUlice = "", mesto = "", psc = "";
+            if (below.length) {
+                const nextY = Math.max(...below.map((c) => c.y));
+                const row = rowOf({ y: nextY });
+                if (!row.some((c) => c.x < c1 - COL_TOLERANCE)) {
+                    adresaUlice = textBetween(row, c1, c2);
+                    mesto = textBetween(row, c2, c3);
+                    psc = textBetween(row, c3, Infinity);
+                }
+            }
+
+            return {
+                jmeno: leftValue('PŘÍJMENÍ Jméno'),
+                narozeni: leftValue('Datum / Místo /Stát'),
+                adresaUlice,
+                mesto,
+                psc,
+            };
+        }
+        // --- END QUESTIONNAIRE TEXT PARSER ---
 
         // --- GENERATOR ---
         async function generateDocx() {

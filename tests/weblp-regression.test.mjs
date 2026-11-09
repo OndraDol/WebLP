@@ -21,9 +21,64 @@ function generatorBlock() {
   return html.slice(start, end);
 }
 
-test('PDF extraction engine stays untouched', () => {
-  const hash = createHash('sha256').update(pdfEngineBlock()).digest('hex');
-  assert.equal(hash, 'e37a72b1dd158e68745aed67629eeaf3c5059ca25ea895da71c96a33497ee6a4');
+function loadQuestionnaireParser() {
+  const block = pdfEngineBlock();
+  const start = block.indexOf('        // --- QUESTIONNAIRE TEXT PARSER ---');
+  const end = block.indexOf('        // --- END QUESTIONNAIRE TEXT PARSER ---');
+  assert.ok(start >= 0 && end > start, 'Missing questionnaire text parser block');
+  return new Function(`${block.slice(start, end)}\nreturn parseQuestionnaireText;`)();
+}
+
+// Rozložení textu osobního dotazníku ve formátu z 11/2026 (souřadnice dle PDF.js, smyšlené údaje).
+function flatQuestionnaireItems({ name = 'Jan Novák', birth = '1.2.1990 / Brno', street = 'Dlouhá 12', city = 'Praha', zip = '110 00' } = {}) {
+  return [
+    [46, 810, 'Osobní dotazník'], [471, 817, '9.11.2026 13:01:49'],
+    [46, 793, 'PŘÍJMENÍ Jméno'], [173, 793, name], [301, 793, 'Titul/věd. hodnost'],
+    [46, 777, 'Rodné Příjmení/Jméno'], [301, 777, 'Číslo OP'], [428, 777, '123456789'],
+    [46, 746, 'Datum / Místo /Stát'], [46, 737, 'narození'], [173, 746, birth],
+    [301, 746, 'Státní příslušnost'], [428, 746, 'Česká Republika'],
+    [46, 645, 'Cizinec: 1.zaměstnání v ČR:'], [173, 645, 'Ne'], [186, 645, '(vyplní pouze cizinec)'],
+    [46, 629, 'Adresa trvalého bydliště'], [173, 629, 'Ulice/č.'], [301, 629, 'Město'], [428, 629, 'PSČ'],
+    [173, 614, street], [301, 614, city], [428, 614, zip],
+    [46, 598, 'Adresa pro doručování'], [173, 598, 'Ulice/č.'], [301, 598, 'Město'], [428, 598, 'PSČ'],
+    [173, 583, 'Jiná 1'], [301, 583, 'Plzeň'], [428, 583, '301 00'],
+  ].filter(([, , str]) => str).map(([x, y, str]) => ({ str, x, y }));
+}
+
+test('PDF reading keeps AcroForm fields and falls back to text for flat questionnaires', () => {
+  const block = pdfEngineBlock();
+  for (const field of ['jmeno', 'narozeni', 'trvale-bydliste-ulice', 'trvale-bydliste-mesto', 'trvale-bydliste-psc']) {
+    assert.match(block, new RegExp(`getField\\('${field}'\\)`), `Missing AcroForm field: ${field}`);
+  }
+  assert.match(block, /parseQuestionnaireText\(await readPdfTextItems\(arrayBuffer\)\)/, 'Missing text fallback');
+  assert.match(html, /pdf\.js\/3\.11\.174\/pdf\.min\.js/, 'Missing pinned PDF.js library');
+});
+
+test('flat questionnaire text is parsed into personal data', () => {
+  const parse = loadQuestionnaireParser();
+  assert.deepEqual(parse(flatQuestionnaireItems()), {
+    jmeno: 'Jan Novák',
+    narozeni: '1.2.1990 / Brno',
+    adresaUlice: 'Dlouhá 12',
+    mesto: 'Praha',
+    psc: '110 00',
+  });
+});
+
+test('empty permanent address does not borrow the delivery-address header', () => {
+  const parse = loadQuestionnaireParser();
+  const items = flatQuestionnaireItems({ street: '', city: '', zip: '' });
+  const result = parse(items);
+  assert.equal(result.adresaUlice, '');
+  assert.equal(result.mesto, '');
+  assert.equal(result.psc, '');
+  assert.equal(result.jmeno, 'Jan Novák');
+});
+
+test('unrelated PDF text yields no personal data', () => {
+  const parse = loadQuestionnaireParser();
+  const result = parse([{ str: 'Faktura', x: 46, y: 800 }]);
+  assert.ok(!Object.values(result).some(Boolean));
 });
 
 test('DOCX generator stays untouched', () => {
